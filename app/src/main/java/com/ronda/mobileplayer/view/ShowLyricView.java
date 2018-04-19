@@ -118,7 +118,7 @@ public class ShowLyricView extends TextView {
         super.onDraw(canvas);
         if (lyrics != null && lyrics.size() > 0) {
 
-            //往上推移
+            //歌词缓缓往上推移
             float plush = 0;
             if(sleepTime ==0){
                 plush = 0;
@@ -177,20 +177,17 @@ public class ShowLyricView extends TextView {
         if (lyrics == null || lyrics.size() == 0)
             return;
 
-
-        for (int i = 1; i < lyrics.size(); i++) {
-
+        for (int i = 1; i < lyrics.size(); i++) { // 从1开始
             if(currentPosition < lyrics.get(i).getTimePoint()){
 
                 int tempIndex = i - 1;
 
-                if(currentPosition >= lyrics.get(tempIndex).getTimePoint()){
+                if(currentPosition >= lyrics.get(tempIndex).getTimePoint()){ // tempIndex 就表示当前所播放的时间
                     //当前正在播放的哪句歌词
                     index = tempIndex;
                     sleepTime = lyrics.get(index).getSleepTime();
                     timePoint = lyrics.get(index).getTimePoint();
                 }
-
             }
         }
         //重新绘制

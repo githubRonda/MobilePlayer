@@ -215,18 +215,10 @@ public class LyricUtils {
                     //添加到集合中
                     lyrics.add(lyric);
                     lyric = new Lyric();
-
                 }
-
-
             }
-
             return  content;//我在这里欢笑
-
-
         }
-
-
         return "";
     }
 
@@ -253,7 +245,7 @@ public class LyricUtils {
             //3.毫秒
             long mil = Long.parseLong(s2[1]);
 
-            result =  min * 60 * 1000 + second * 1000 + mil*10;
+            result =  min * 60 * 1000 + second * 1000 + mil*10; // 注意毫秒要乘以10
         }catch (Exception e){
             e.printStackTrace();
             result = -1;
@@ -263,7 +255,7 @@ public class LyricUtils {
     }
 
     /**
-     * 判断有多少句歌词
+     * 判断有多少句歌词 (判断中括号的个数,谁长返回谁)
      * @param line [02:04.12][03:37.32][00:59.73]我在这里欢笑
      * @return
      */

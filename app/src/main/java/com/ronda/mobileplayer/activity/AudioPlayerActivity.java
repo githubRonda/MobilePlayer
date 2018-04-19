@@ -343,14 +343,13 @@ public class AudioPlayerActivity extends Activity implements View.OnClickListene
 
                     //1.得到当前的进度
                     try {
-                        int currentPosition = service.getCurrentPosition();
-
+                        int currentPosition = service.getCurrentPosition(); // 当前的播放进度
 
                         //2.把进度传入ShowLyricView控件，并且计算该高亮哪一句
-
                         showLyricView.setshowNextLyric(currentPosition);
+
                         //3.实时的发消息
-                        handler.removeMessages(SHOW_LYRIC);
+                        handler.removeMessages(SHOW_LYRIC); // 先移除,在发送
                         handler.sendEmptyMessage(SHOW_LYRIC);
                     } catch (RemoteException e) {
                         e.printStackTrace();
