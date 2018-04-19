@@ -22,12 +22,16 @@ import android.widget.TextView;
 
 
 import com.ronda.mobileplayer.R;
+import com.ronda.mobileplayer.activity.AudioPlayerActivity;
+import com.ronda.mobileplayer.adapter.VideoPagerAdapter;
 import com.ronda.mobileplayer.base.BasePager;
+import com.ronda.mobileplayer.domain.MediaItem;
+import com.ronda.mobileplayer.utils.LogUtil;
 
 import java.util.ArrayList;
 
 /**
- * 作用：本地音频页面
+ * 本地音频页面
  */
 public class AudioPager extends BasePager {
 
@@ -35,31 +39,13 @@ public class AudioPager extends BasePager {
     private TextView tv_nomedia;
     private ProgressBar pb_loading;
 
-    public AudioPager(Context context) {
-        super(context);
-    }
-
-
-    @Override
-    public View initView() {
-        TextView textView = new TextView(context);
-        textView.setText("AudioPager");
-        textView.setTextColor(Color.RED);
-        textView.setTextSize(22);
-        textView.setGravity(Gravity.CENTER);
-        return textView;
-    }
-
-
-
-/*
 
     private VideoPagerAdapter videoPagerAdapter;
 
-    */
-/**
+
+    /**
      * 装数据集合
-     *//*
+     */
 
     private ArrayList<MediaItem> mediaItems;
 
@@ -68,39 +54,35 @@ public class AudioPager extends BasePager {
         super(context);
     }
 
-    private Handler handler = new Handler(){
+    private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            if(mediaItems != null && mediaItems.size() >0){
-                //有数据
-                //设置适配器
-                videoPagerAdapter = new VideoPagerAdapter(context,mediaItems,false);
+            if (mediaItems != null && mediaItems.size() > 0) {
+                //有数据, 则设置适配器
+                videoPagerAdapter = new VideoPagerAdapter(context, mediaItems, false);
                 listview.setAdapter(videoPagerAdapter);
                 //把文本隐藏
                 tv_nomedia.setVisibility(View.GONE);
-            }else{
-                //没有数据
-                //文本显示
+            } else {
+                //没有数据, 则文本显示
                 tv_nomedia.setVisibility(View.VISIBLE);
                 tv_nomedia.setText("没有发现音频....");
             }
-
 
             //ProgressBar隐藏
             pb_loading.setVisibility(View.GONE);
         }
     };
 
-    */
-/**
+    /**
      * 初始化当前页面的控件，由父类调用
+     *
      * @return
-     *//*
-
+     */
     @Override
     public View initView() {
-        View view = View.inflate(context, R.layout.video_pager,null);
+        View view = View.inflate(context, R.layout.video_pager, null);
         listview = (ListView) view.findViewById(R.id.listview);
         tv_nomedia = (TextView) view.findViewById(R.id.tv_nomedia);
         pb_loading = (ProgressBar) view.findViewById(R.id.pb_loading);
@@ -115,8 +97,8 @@ public class AudioPager extends BasePager {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
             //3.传递列表数据-对象-序列化
-            Intent intent = new Intent(context,AudioPlayerActivity.class);
-            intent.putExtra("position",position);
+            Intent intent = new Intent(context, AudioPlayerActivity.class);
+            intent.putExtra("position", position);
             context.startActivity(intent);
 
         }
@@ -131,37 +113,35 @@ public class AudioPager extends BasePager {
         getDataFromLocal();
     }
 
-    */
-/**
+    /**
      * 从本地的sdcard得到数据
      * //1.遍历sdcard,后缀名
      * //2.从内容提供者里面获取视频
      * //3.如果是6.0的系统，动态获取读取sdcard的权限
-     *//*
+     */
 
     private void getDataFromLocal() {
 
-        new Thread(){
+        new Thread() {
             @Override
             public void run() {
                 super.run();
 
 //                isGrantExternalRW((Activity) context);
-//                SystemClock.sleep(2000);
                 mediaItems = new ArrayList<>();
                 ContentResolver resolver = context.getContentResolver();
                 Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
                 String[] objs = {
-                        MediaStore.Audio.Media.DISPLAY_NAME,//视频文件在sdcard的名称
-                        MediaStore.Audio.Media.DURATION,//视频总时长
-                        MediaStore.Audio.Media.SIZE,//视频的文件大小
-                        MediaStore.Audio.Media.DATA,//视频的绝对地址
+                        MediaStore.Audio.Media.DISPLAY_NAME,//音乐文件在sdcard的名称
+                        MediaStore.Audio.Media.DURATION,//音乐总时长
+                        MediaStore.Audio.Media.SIZE,//音乐的文件大小
+                        MediaStore.Audio.Media.DATA,//音乐的绝对地址
                         MediaStore.Audio.Media.ARTIST,//歌曲的演唱者
 
                 };
                 Cursor cursor = resolver.query(uri, objs, null, null, null);
-                if(cursor != null){
-                    while (cursor.moveToNext()){
+                if (cursor != null) {
+                    while (cursor.moveToNext()) {
 
                         MediaItem mediaItem = new MediaItem();
 
@@ -181,30 +161,20 @@ public class AudioPager extends BasePager {
 
                         String artist = cursor.getString(4);//艺术家
                         mediaItem.setArtist(artist);
-
-
-
                     }
-
                     cursor.close();
-
-
                 }
-
-
                 //Handler发消息
                 handler.sendEmptyMessage(10);
-
-
             }
         }.start();
 
     }
-*/
 
 
     /**
      * 解决安卓6.0以上版本不能读取外部存储权限的问题
+     *
      * @param activity
      * @return
      */
@@ -222,5 +192,4 @@ public class AudioPager extends BasePager {
 
         return true;
     }
-
 }

@@ -17,7 +17,7 @@
             android:src="@drawable/now_playing_matrix_01"
             android:visibility="gone" />
 
-        <com.atguigu.mobileplayer2.view.BaseVisualizerView
+        <com.ronda.mobileplayer.view.BaseVisualizerView
             android:id="@+id/baseVisualizerView"
             android:layout_width="300dp"
             android:layout_height="100dp"
@@ -124,7 +124,7 @@
 
     </LinearLayout>
 
-    <com.atguigu.mobileplayer2.view.ShowLyricView
+    <com.ronda.mobileplayer.view.ShowLyricView
         android:id="@+id/showLyricView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

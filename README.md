@@ -1,3 +1,13 @@
+
+
+
+使用SurfaceView播放视频的截屏
+![](ScreenShots/p1.png )
+
+
+
+
+
 #启动页SplashActivity
 注意点:
 
@@ -217,16 +227,22 @@ onPause(B)-->onResume(A)-->->onStop(B)-->onDestroy(B)
 <p>
 4. 暂停/播放功能. videoview.pause(); / videoview.start();
 <p>
-5. 播放进度的实时更新与调节功能  (每秒更新一次, videoview.seekTo(progress);)
+5. 播放进度的实时更新与调节功能以及网络视频时的缓冲效果  (每秒更新一次, videoview.seekTo(progress);)
 <p>
 6. 上/下个视频切换功能 videoview.setVideoPath(mediaItem.getData()); 设置上/下个视频的切换路径
 <p>
-7. 全屏与否(点击按钮和双击屏幕[手势识别器]). 自定义 VideoView 控件, 拓展一个功能, 从而改变VideoView控件测量时的大小
+7. 全屏与否(点击按钮和双击屏幕). 自定义 VideoView 控件, 拓展一个功能, 从而改变VideoView控件测量时的大小
 <p>
 8. 调节音量与静音: 滑块调节和触屏调节. 借助 AudioManager. 且还要监听物理按键改变声音
 --  int voice = (int) Math.min(Math.max(mVol + delta, 0), maxVoice); // 把计算的值限制在[0, 15]之间, 用max和min分别限制下
 <p>
 9. 调节亮度
+<p>
+10. 监听网络视频播放卡顿,显示正在缓冲界面 (4.2新增API 和 自定义实现)
+<p>
+11. 每次播放视频开始时显示加载视频界面, 然后在OnPreparedListener中隐藏该界面
+<p>
+12. 播放出错的处理
 
 
 
@@ -947,3 +963,1159 @@ eg: targetSdkVersion 22
 
 	<--一个APP可以有多个LAUNCHER, 这时安装程序的时候, 系统会优先启动清单列表中的第一个LAUNCHER界面. 而且桌面会形成多个图标. label属性还可以更改名字-->
 	<category android:name="android.intent.category.LAUNCHER" />
+
+
+# xutils框架
+
+# XListView-Android
+https://github.com/Maxwin-z/XListView-Android
+(已停止更新)
+
+		mListView = (XListView) findViewById(R.id.xListView);
+		mListView.setPullLoadEnable(true);
+		mAdapter = new ArrayAdapter<String>(this, R.layout.list_item, items);
+		mListView.setAdapter(mAdapter);
+		mListView.setXListViewListener(this);
+
+	private void onLoad() {
+		mListView.stopRefresh();
+		mListView.stopLoadMore();
+		mListView.setRefreshTime("刚刚");
+	}
+	
+	@Override
+	public void onRefresh() {
+		mHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				items = geneItems();
+				mAdapter = new ArrayAdapter<String>(XListViewActivity.this, R.layout.list_item, items);
+				mListView.setAdapter(mAdapter);
+				onLoad();
+			}
+		}, 2000);
+	}
+
+	@Override
+	public void onLoadMore() {
+		mHandler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				geneItems();
+				mAdapter.notifyDataSetChanged();
+				onLoad();
+			}
+		}, 2000);
+	}
+
+
+
+
+#两种直播
+
+1.网络电视直接(eg: 新闻联播)
+
+ 相当于把电视的播放，转到手机上来播放
+
+ 从服务器获取流，一边下载一边播放；
+
+http://cctv13.vtime.cntv.cloudcdn.net/live/no/23_/seg0/index.m3u8?uid=default&AUTH=Ite90HE2JJub81VrFFOU9WbgKr0t8yePUk9/dIg85CtViWynv8YvPcB2KIXUB8+2DookmfOpbagUKexGL0E/VA==
+
+
+
+
+2.手机直播
+
+ 手机生成视频，一边上传到服务器，有服务器分发到不同的手机上。
+
+	EasyPusher
+	http://www.easydarwin.org/
+	 
+	 
+	声网
+	http://cn.agora.io/
+	 
+	微吼
+	http://e.vhall.com/home/vhallapi/androidsdk
+	 
+	趣拍直播
+	https://www.qupaicloud.com/
+	 
+	zego
+	http://www.zego.im/
+	 
+	乐视云
+	http://www.lecloud.com/product/mobile.html
+	 
+	七牛存储
+	http://www.qiniu.com
+
+
+#做视频播放器的两种做法
+
+1.第一种方式：直接使用VideoView
+
+2.第二种方式：在Activity中封装MediaPlayer和surfaceView
+
+
+#Activity和服务交互的方式
+
+广播，Intent,Handler,接口回调，Application,EventBus,AIDL
+
+
+
+#AIDL小案例
+
+1.开启服务
+              Intent intent = new Intent(this,MyService.class);
+				intent.setAction("com.yanguangfu.binder.action.AIDLService");
+				bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
+   //			 startService(intent);
+
+
+2. 得到服务的引用
+
+  private AIDLService mService;
+	private ServiceConnection mConnection = new ServiceConnection() {
+		public void onServiceConnected(ComponentName className, IBinder service) {
+			Log.e("yangguangfu", "MainActivity.onServiceConnected");
+			mService = AIDLService.Stub.asInterface(service);
+			try {
+				mService.registerTestCall(mCallback);
+			} catch (RemoteException e) {
+
+			}
+		}
+
+		public void onServiceDisconnected(ComponentName className) {
+			Log.e("yangguangfu", "MainActivity.onServiceDisconnected");
+			mService = null;
+		}
+	};
+
+
+
+3.配置服务
+     <service android:name="com.yanguangfu.binder.MyService" >
+            <intent-filter>
+                <action android:name="com.yanguangfu.binder.action.AIDLService" />
+            </intent-filter>
+        </service>
+
+
+
+4.aidl文件
+
+	interface AIDLService {   
+	    void registerTestCall(AIDLActivity cb);   
+	    void invokCallBack();
+	    
+	    String getName();
+	    int getAge();
+	}  
+
+
+5.服务类
+
+
+ /**
+ *
+ * @author 杨光福
+ *
+ */
+public class MyService extends Service {
+
+	private AIDLActivity callback;
+
+
+
+	@Override
+	public void onCreate() {
+		Log.e("yangguangfu", "MyService.onCreate");
+	}
+
+
+	@Override
+	public void onStart(Intent intent, int startId) {
+		Log.e("yangguangfu", "MyService.onStart startId="+startId);
+	}
+
+
+	@Override
+	public IBinder onBind(Intent t) {
+		Log.e("yangguangfu", "MyService.onBind");
+		return mBinder;
+	}
+
+
+	@Override
+	public void onDestroy() {
+		Log.e("yangguangfu", "MyService.onDestroy");
+		super.onDestroy();
+	}
+
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		Log.e("yangguangfu", "MyService.onUnbind");
+		return super.onUnbind(intent);
+	}
+
+
+	public void onRebind(Intent intent) {
+		Log.e("yangguangfu", "MyService.onRebind");
+		super.onRebind(intent);
+	}
+
+	private String getNames(){
+		Log.e("yangguangfu", "MyService.getName");
+		return "name from service";
+	}
+
+	private int getAges(){
+		Log.e("yangguangfu", "MyService.getAge");
+		return 24;
+	}
+
+	private final AIDLService.Stub mBinder = new AIDLService.Stub() {
+
+		@Override
+		public void invokCallBack() throws RemoteException {
+			Log.e("yangguangfu", "MyService.AIDLService.invokCallBack");
+			Rect1 rect = new Rect1();
+			rect.bottom=-1;
+			rect.left=-1;
+			rect.right=1;
+			rect.top=1;
+			callback.performAction(rect);
+		}
+
+
+		@Override
+		public void registerTestCall(AIDLActivity cb) throws RemoteException {
+			Log.e("yangguangfu", "MyService.AIDLService.registerTestCall");
+			callback = cb;
+		}
+
+
+		@Override
+		public String getName() throws RemoteException {
+			Log.e("yangguangfu", "MyService.AIDLService.getName");
+			return getNames();
+		}
+
+
+		@Override
+		public int getAge() throws RemoteException {
+			Log.e("yangguangfu", "MyService.AIDLService.getAge");
+			return getAges();
+		}
+	};
+}
+
+
+
+#让歌曲可以在Service中播放
+
+1.创建MusicPlayerService 继承Service
+
+ 把常用的方法先写出来，但不实现
+	
+	  /**
+	 * 作者：尚硅谷-杨光福 on 2016/7/22 15:55
+	 * 微信：yangguangfu520
+	 * QQ号：541433511
+	 * 作用：xxxx
+	 */
+	public class MusicPlayerService extends Service {
+	
+	    @Override
+	    public void onCreate() {
+	        super.onCreate();
+	    }
+	
+	    @Nullable
+	    @Override
+	    public IBinder onBind(Intent intent) {
+	        return null;
+	    }
+	
+	    /**
+	     * 根据位置打开对应的音频文件
+	     * @param position
+	     */
+	    private void openAudio(int position){
+	
+	    }
+	
+	
+	    /**
+	     * 播放音乐
+	     */
+	    private void start(){
+	
+	    }
+	
+	    /**
+	     * 播暂停音乐
+	     */
+	    private void pause(){
+	
+	    }
+	
+	    /**
+	     * 停止
+	     */
+	    private void stop(){
+	
+	    }
+	
+	    /**
+	     * 得到当前的播放进度
+	     * @return
+	     */
+	    private int getCurrentPosition(){
+	        return 0;
+	    }
+	
+	
+	    /**
+	     * 得到当前音频的总时长
+	     * @return
+	     */
+	    private int getDuration(){
+	        return 0;
+	    }
+	
+	    /**
+	     * 得到艺术家
+	     * @return
+	     */
+	    private String getArtist(){
+	        return "";
+	    }
+	
+	    /**
+	     * 得到歌曲名字
+	     * @return
+	     */
+	    private String getName(){
+	        return "";
+	    }
+	
+	
+	    /**
+	     * 得到歌曲播放的路径
+	     * @return
+	     */
+	    private String getAudioPath(){
+	        return "";
+	    }
+	
+	    /**
+	     * 播放下一个视频
+	     */
+	    private void next(){
+	
+	    }
+	
+	
+	    /**
+	     * 播放上一个视频
+	     */
+	    private void pre(){
+	
+	    }
+	
+	    /**
+	     * 设置播放模式
+	     * @param playmode
+	     */
+	    private void setPlayMode(int playmode){
+	
+	    }
+	
+	    /**
+	     * 得到播放模式
+	     * @return
+	     */
+	    private int getPlayMode(){
+	        return 0;
+	    }
+	
+	
+	}
+
+
+
+
+2.参数服务的方法，写对应的AIDL文件的方法
+
+	   interface IMusicPlayerService {
+	
+	    /**
+	        * 根据位置打开对应的音频文件
+	        * @param position
+	        */
+	        void openAudio(int position);
+	
+	
+	       /**
+	        * 播放音乐
+	        */
+	        void start();
+	
+	       /**
+	        * 播暂停音乐
+	        */
+	        void pause();
+	
+	       /**
+	        * 停止
+	        */
+	        void stop();
+	
+	       /**
+	        * 得到当前的播放进度
+	        * @return
+	        */
+	        int getCurrentPosition();
+	
+	
+	       /**
+	        * 得到当前音频的总时长
+	        * @return
+	        */
+	        int getDuration();
+	
+	       /**
+	        * 得到艺术家
+	        * @return
+	        */
+	        String getArtist();
+	
+	       /**
+	        * 得到歌曲名字
+	        * @return
+	        */
+	        String getName();
+	
+	
+	       /**
+	        * 得到歌曲播放的路径
+	        * @return
+	        */
+	        String getAudioPath();
+	
+	       /**
+	        * 播放下一个视频
+	        */
+	        void next();
+	
+	
+	       /**
+	        * 播放上一个视频
+	        */
+	        void pre();
+	
+	       /**
+	        * 设置播放模式
+	        * @param playmode
+	        */
+	        void setPlayMode(int playmode);
+	
+	       /**
+	        * 得到播放模式
+	        * @return
+	        */
+	        int getPlayMode();
+	}
+
+
+
+3.把服务在功底清单文件中注册
+
+	   <service android:name=".service.MusicPlayerService">
+	            <intent-filter>
+	                <action android:name="com.atguigu.mobileplayer_OPENAUDIO" />
+	            </intent-filter>
+	        </service>
+	    </application>
+
+4.把AIDL 文件生成的类，在服务中绑定
+	
+	   @Nullable
+	    @Override
+	    public IBinder onBind(Intent intent) {
+	        return stub;//一定要返回
+	    }
+	    private IMusicPlayerService.Stub stub = new IMusicPlayerService.Stub() {
+	        MusicPlayerService service = MusicPlayerService.this;
+	        @Override
+	        public void openAudio(int position) throws RemoteException {
+	            service.openAudio(position);
+	        }
+	
+	        @Override
+	        public void start() throws RemoteException {
+	            service.start();
+	
+	        }
+	
+	        @Override
+	        public void pause() throws RemoteException {
+	            service.pause();
+	        }
+	
+	        @Override
+	        public void stop() throws RemoteException {
+	            service.stop();
+	        }
+	
+	        @Override
+	        public int getCurrentPosition() throws RemoteException {
+	            return service.getCurrentPosition();
+	        }
+	
+	        @Override
+	        public int getDuration() throws RemoteException {
+	            return service.getDuration();
+	        }
+	
+	        @Override
+	        public String getArtist() throws RemoteException {
+	            return service.getArtist();
+	        }
+	
+	        @Override
+	        public String getName() throws RemoteException {
+	            return service.getName();
+	        }
+	
+	        @Override
+	        public String getAudioPath() throws RemoteException {
+	            return service.getAudioPath();
+	        }
+	
+	        @Override
+	        public void next() throws RemoteException {
+	            service.next();
+	        }
+	
+	        @Override
+	        public void pre() throws RemoteException {
+	            service.pre();
+	        }
+	
+	        @Override
+	        public void setPlayMode(int playmode) throws RemoteException {
+	            service.setPlayMode(playmode);
+	        }
+	
+	        @Override
+	        public int getPlayMode() throws RemoteException {
+	            return service.getPlayMode();
+	        }
+	    };
+	  
+	
+	    /**
+	     * 根据位置打开对应的音频文件
+	     * @param position
+	     */
+	    private void openAudio(int position){
+	
+	    }
+	
+
+
+
+
+
+5.绑定方式启动Service
+    private void bindAndStartService() {
+        Intent intent = new Intent(this, MusicPlayerService.class);
+        intent.setAction("com.atguigu.mobileplayer_OPENAUDIO");
+        bindService(intent, con, Context.BIND_AUTO_CREATE);
+        startService(intent);//不至于实例化多个服务
+    }
+
+6.在MusicPlayerService得到音乐列表
+    private void getDataFromLocal() {
+
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+
+                mediaItems = new ArrayList<>();
+                ContentResolver resolver = getContentResolver();
+                Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                String[] objs = {
+                        MediaStore.Audio.Media.DISPLAY_NAME,//视频文件在sdcard的名称
+                        MediaStore.Audio.Media.DURATION,//视频总时长
+                        MediaStore.Audio.Media.SIZE,//视频的文件大小
+                        MediaStore.Audio.Media.DATA,//视频的绝对地址
+                        MediaStore.Audio.Media.ARTIST,//歌曲的演唱者
+
+                };
+                Cursor cursor = resolver.query(uri, objs, null, null, null);
+                if (cursor != null) {
+                    while (cursor.moveToNext()) {
+
+                        MediaItem mediaItem = new MediaItem();
+
+                        mediaItems.add(mediaItem);//写在上面
+
+                        String name = cursor.getString(0);//视频的名称
+                        mediaItem.setName(name);
+
+                        long duration = cursor.getLong(1);//视频的时长
+                        mediaItem.setDuration(duration);
+
+                        long size = cursor.getLong(2);//视频的文件大小
+                        mediaItem.setSize(size);
+
+                        String data = cursor.getString(3);//视频的播放地址
+                        mediaItem.setData(data);
+
+                        String artist = cursor.getString(4);//艺术家
+                        mediaItem.setArtist(artist);
+
+
+                    }
+
+                    cursor.close();
+
+                }
+
+            }
+        }.start();
+
+    }
+
+
+7.当绑定成功的时候播放音乐
+
+    private IMusicPlayerService service;//服务的代理类，通过它可以调用服务的方法
+    private ServiceConnection con = new ServiceConnection() {
+
+        /**
+         * 当连接成功的时候回调这个方法
+         * @param name
+         * @param iBinder
+         */
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder iBinder) {
+            service = IMusicPlayerService.Stub.asInterface(iBinder);
+            if(service != null){
+                try {
+                    service.openAudio(position);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        /**
+         * 当断开连接的时候回调这个方法
+         * @param name
+         */
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            try {
+                if(service != null){
+                    service.stop();
+                    service = null;
+                }
+
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+
+
+8.在服务总实现openAudio功能
+
+     private void openAudio(int position) {
+        this.position = position;
+        if (mediaItems != null && mediaItems.size() > 0) {
+
+            mediaItem = mediaItems.get(position);
+
+            if (mediaPlayer != null) {
+                mediaPlayer.release();
+                mediaPlayer.reset();
+            }
+
+            try {
+                mediaPlayer = new MediaPlayer();
+                //设置监听：播放出错，播放完成，准备好
+                mediaPlayer.setOnPreparedListener(new MyOnPreparedListener());
+                mediaPlayer.setOnCompletionListener(new MyOnCompletionListener());
+                mediaPlayer.setOnErrorListener(new MyOnErrorListener());
+                mediaPlayer.setDataSource(mediaItem.getData());
+                mediaPlayer.prepareAsync();
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+        } else {
+            Toast.makeText(MusicPlayerService.this, "还没有数据", Toast.LENGTH_SHORT).show();
+        }
+
+     }
+
+
+
+8.实现音乐的播放和暂停
+
+
+      if(service != null){
+                try {
+                    if(service.isPlaying()){
+                        //暂停
+                        service.pause();
+                        //按钮-播放
+                        btnAudioStartPause.setBackgroundResource(R.drawable.btn_audio_start_selector);
+                    }else{
+                        //播放
+                        service.start();
+                        //按钮-暂停
+                        btnAudioStartPause.setBackgroundResource(R.drawable.btn_audio_pause_selector);
+                    }
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+# 通知栏
+
+	manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+	Intent intent = new Intent(this, AudioPlayerActivity.class);
+	intent.putExtra("notification", true);
+	PendingIntent pi = PendingIntent.getActivity(this, 1, intent, 0);
+	Notification notification = new Notification.Builder(this)
+	        .setSmallIcon(R.drawable.notification_music_playing)
+	        .setContentTitle("321音乐")
+	        .setContentText("正在播放" + mediaItem.getName())
+	        .setContentIntent(pi)
+	        .build();
+	notification.flags = Notification.FLAG_ONGOING_EVENT;//点击不消失
+	manager.notify(1, notification);
+
+
+# 上一首, 下一首
+
+    /**
+     * 播放下一个音频
+     */
+    private void next() {
+
+        //1.根据当前的播放模式，设置下一个的位置
+        setNextPosition();
+        //2.根据当前的播放模式和下标位置去播放音频
+        openNextAudio();
+    }
+
+
+#EventBus介绍
+
+EventBus是一款针对Android优化的发布/订阅事件总线。主要功能是替代Intent,Handler,BroadCast在Fragment，Activity，Service，线程之间传递消息.优点是开销小，代码更优雅。以及将发送者和接收者解耦。
+
+#源码下载地址
+
+  https://github.com/greenrobot/EventBus
+
+  最新版本3.0
+  和之前不兼容
+
+
+#EventBus的使用
+
+1.注册
+EventBus.getDefault().register(this);
+
+2.自定义对应的类型类
+  
+   public class FirstEvent {
+
+	private String mMsg;
+	public FirstEvent(String msg) {
+		mMsg = msg;
+	}
+	public String getMsg(){
+		return mMsg;
+	}
+  }
+
+
+4.订阅对应的方法
+
+    public void onEventMainThread(FirstEvent event) {
+
+		Log.d("harvic", "onEventMainThread:" + event.getMsg());
+	}
+
+	public void onEventMainThread(SecondEvent event) {
+
+		Log.d("harvic", "onEventMainThread:" + event.getMsg());
+	}
+
+	public void onEventBackgroundThread(SecondEvent event){
+		Log.d("harvic", "onEventBackground:" + event.getMsg());
+	}
+
+	public void onEventAsync(SecondEvent event){
+		Log.d("harvic", "onEventAsync:" + event.getMsg());
+	}
+
+
+	public void onEvent(ThirdEvent event) {
+		Log.d("harvic", "OnEvent:" + event.getMsg());
+	}
+
+
+5.订阅取消
+ EventBus.getDefault().unregister(this);
+
+
+6.发消息
+
+    EventBus.getDefault().post(
+						new FirstEvent("FirstEvent btn clicked"));
+
+
+- onEvent:如果使用onEvent作为订阅函数，那么该事件在哪个线程发布出来的，onEvent就会在这个线程中运行，也就是说发布事件和接收事件线程在同一个线程。使用这个方法时，在onEvent方法中不能执行耗时操作，如果执行耗时操作容易导致事件分发延迟。
+
+- onEventMainThread:如果使用onEventMainThread作为订阅函数，那么不论事件是在哪个线程中发布出来的，onEventMainThread都会在UI线程中执行，接收事件就会在UI线程中运行，这个在Android中是非常有用的，因为在Android中只能在UI线程中跟新UI，所以在onEvnetMainThread方法中是不能执行耗时操作的。
+- onEventBackground:如果使用onEventBackgrond作为订阅函数，那么如果事件是在UI线程中发布出来的，那么-onEventBackground就会在子线程中运行，如果事件本来就是子线程中发布出来的，那么onEventBackground函数直接在该子线程中执行。
+- onEventAsync：使用这个函数作为订阅函数，那么无论事件在哪个线程发布，都会创建新的子线程在执行onEventAsync.
+
+
+EventBus3.0
+
+1.方法名，不需要onEven开头
+2.方法的线程模式ThreadMode 可以配置， 两个方法通用一个参数，可以设置优先级priority，值越大，优先收到
+
+
+使用EventBus3.0
+
+
+1.关联
+
+2.注册
+  //1.EventBus注册
+      EventBus.getDefault().register(this);//this是当前类
+
+
+3.订阅方法 ,不能私有
+ //3.订阅方法
+    @Subscribe(threadMode = ThreadMode.MAIN,sticky = false,priority = 0)
+    public void showData(MediaItem mediaItem) {
+        showViewData();
+        checkPlaymode();
+    }
+
+4.取消注册
+
+    //2.EventBus取消注册
+        EventBus.getDefault().unregister(this);
+
+
+5.发消息
+
+
+
+##歌词同步步骤
+
+
+#创建歌词显示控件ShowLyricView
+  继承TextView
+
+
+#创建歌词列表
+ 1.假设的歌词
+ 2.歌词列表
+   private void initView() {
+        lyrics = new ArrayList<>();
+
+        Lyric lyric = new Lyric();
+        for(int i=0 ; i<1000;i++){
+
+            lyric.setTimePoint(1000 * i);
+            lyric.setSleepTime(1500 + i);
+            lyric.setContent(i + "aaaaaaaaaaaaaaa" + i);
+            //把歌词添加到集合中
+            lyrics.add(lyric);
+            lyric = new Lyric();
+        }
+     }
+
+
+
+#绘制歌词
+ 1.绘制前面部分
+ 2.绘制当前部分
+ 3.绘制后面部分
+
+   @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        if(lyrics != null && lyrics.size() >0){
+            //绘制歌词:绘制当前句
+            String currentText = lyrics.get(index).getContent();
+            canvas.drawText(currentText,width/2,height/2,paint);
+            // 绘制前面部分
+            int tempY = height/2;//Y轴的中间坐标
+            for(int i= index-1;i >=0 ;i--){
+                //每一句歌词
+                String preContent = lyrics.get(i).getContent();
+                tempY = tempY - textHeight;
+                if(tempY < 0){
+                    break;
+                }
+                canvas.drawText(preContent,width/2,tempY,whitepaint);
+            }
+
+            // 绘制后面部分
+            tempY = height/2;//Y轴的中间坐标
+            for(int i= index+1; i < lyrics.size() ;i++){
+                //每一句歌词
+                String nextContent = lyrics.get(i).getContent();
+                tempY = tempY + textHeight;
+                if(tempY > height){
+                    break;
+                }
+                canvas.drawText(nextContent,width/2,tempY,whitepaint);
+            }
+
+        }else{
+            //没有歌词
+            canvas.drawText("没有歌词",width/2,height/2,paint);
+        }
+    }
+
+
+#跟句当前播放歌曲进度实时绘制歌词的位置
+ 1.handler刷新
+ 2.跟句当前播放歌曲进度实时更新歌词绘制的位置
+
+	   /**
+	     * 根据当前播放的位置，找出该高亮显示哪句歌词
+	     *
+	     * @param currentPosition
+	     */
+	    public void setshowNextLyric(int currentPosition) {
+	        this.currentPositon = currentPosition;
+	        if (lyrics == null || lyrics.size() == 0)
+	            return;
+	
+	
+	        for (int i = 1; i < lyrics.size(); i++) {
+	
+	            if(currentPosition < lyrics.get(i).getTimePoint()){
+	
+	                int tempIndex = i - 1;
+	
+	                if(currentPosition >= lyrics.get(tempIndex).getTimePoint()){
+	                    //当前正在播放的哪句歌词
+	                    index = tempIndex;
+	                    sleepTime = lyrics.get(index).getSleepTime();
+	                    timePoint = lyrics.get(index).getTimePoint();
+	                }
+	
+	            }
+	        }
+	        //重新绘制
+	        invalidate();//在主线程中
+	        //子线程
+	//        postInvalidate();
+	    }
+
+
+
+#解析歌词
+ 1.解析每一句
+
+    /**
+     * 解析一句歌词
+     * @param line [02:04.12][03:37.32][00:59.73]我在这里欢笑
+     * @return
+     */
+    private String parsedLyric(String line) {
+        ////indexOf第一次出现[的位置
+        int pos1 = line.indexOf("[");//0,如果没有返回-1
+
+        int pos2 = line.indexOf("]");//9,如果没有返回-1
+
+        if(pos1 ==0 && pos2 != -1){//肯定是由一句歌词
+
+            //装时间
+            long[] times = new long[getCountTag(line)];
+
+            String strTime =line.substring(pos1+1,pos2) ;//02:04.12
+            times[0] = strTime2LongTime(strTime);
+
+            String content = line;
+            int i = 1;
+            while (pos1 ==0 && pos2 != -1){
+                content = content.substring(pos2 + 1); //[03:37.32][00:59.73]我在这里欢笑--->[00:59.73]我在这里欢笑-->我在这里欢笑
+                pos1 = content.indexOf("[");//0/-1
+                pos2 = content.indexOf("]");//9//-1
+
+                if(pos2 != -1 ){
+                    strTime = content.substring(pos1 + 1, pos2);//03:37.32-->00:59.73
+                    times[i] = strTime2LongTime(strTime);
+
+                    if(times[i] == -1){
+                        return  "";
+                    }
+
+                    i++;
+                }
+
+            }
+
+            Lyric lyric = new Lyric();
+            //把时间数组和文本关联起来，并且加入到集合中
+            for(int j = 0;j < times.length;j++){
+
+                if(times[j] !=0){//有时间戳
+
+                    lyric.setContent(content);
+                    lyric.setTimePoint(times[j]);
+                    //添加到集合中
+                    lyrics.add(lyric);
+                    lyric = new Lyric();
+
+                }
+
+
+            }
+
+            return  content;//我在这里欢笑
+
+
+        }
+
+
+        return "";
+    }
+
+ 2.加入到列表中
+
+ 3.排序
+     //2.排序
+            Collections.sort(lyrics, new Comparator<Lyric>() {
+                @Override
+                public int compare(Lyric lhs, Lyric rhs) {
+                    if(lhs.getTimePoint() < rhs.getTimePoint()){
+                        return  -1;
+                    }else if(lhs.getTimePoint() > rhs.getTimePoint()){
+                        return  1;
+                    }else{
+                        return 0;
+                    }
+
+                }
+            });
+
+ 4.计算每句歌词的高亮时间
+
+      //3.计算每句高亮显示的时间
+            for(int i=0;i<lyrics.size();i++){
+                Lyric oneLyric = lyrics.get(i);
+                if(i+1 < lyrics.size()){
+                    Lyric twoLyric = lyrics.get(i+1);
+                    oneLyric.setSleepTime(twoLyric.getTimePoint()-oneLyric.getTimePoint());
+                }
+            }
+
+ 5.实现歌词同步
+
+ 6.根据不同的歌曲，加载不同的歌词文件
+  private void showLyric() {
+        //解析歌词
+        LyricUtils lyricUtils = new LyricUtils();
+
+        try {
+            String path = service.getAudioPath();//得到歌曲的绝对路径
+
+            //传歌词文件
+            //mnt/sdcard/audio/beijingbeijing.mp3
+            //mnt/sdcard/audio/beijingbeijing.lrc
+            path = path.substring(0,path.lastIndexOf("."));
+            File file = new File(path + ".lrc");
+            if(!file.exists()){
+                file = new File(path + ".txt");
+            }
+            lyricUtils.readLyricFile(file);//解析歌词
+
+            showLyricView.setLyrics(lyricUtils.getLyrics());
+
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
+
+
+        if(lyricUtils.isExistsLyric()){
+            handler.sendEmptyMessage(SHOW_LYRIC);
+        }
+
+    }
+
+
+#歌词缓缓的往上移动
+
+
+	  //往上推移
+	
+	            float plush = 0;
+	            if(sleepTime ==0){
+	                plush = 0;
+	            }else{
+	                //平移
+	                //这一句所花的时间 ：休眠时间 = 移动的距离 ： 总距离（行高）
+	                //移动的距离 =  (这一句所花的时间 ：休眠时间)* 总距离（行高）
+	//                float delta = ((currentPositon-timePoint)/sleepTime )*textHeight;
+	
+	                //屏幕的的坐标 = 行高 + 移动的距离
+	                plush = textHeight + ((currentPositon-timePoint)/sleepTime )*textHeight;
+	            }
+	            canvas.translate(0,-plush);
+
+
+ 注意：要把字段改成float类型
+
+
+
+#科大讯飞的集成
+
+1.注册开发者账号
+
+http://www.xfyun.cn/
+
+2.申请应用-appkey
+
+
+3.下载sdk
+
+4.参照文档或者案例集成
+
+
+
+
+# 待优化
+
+音视频同时播放
+
+顺序播放最后一首完成时, 暂停播放按钮状态不对
